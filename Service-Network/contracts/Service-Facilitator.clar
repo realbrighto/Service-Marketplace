@@ -37,7 +37,7 @@
         engagement-commencement-timestamp: uint,
         engagement-completion-deadline-timestamp: uint,
         mutually-agreed-compensation-amount: uint,
-        contract-execution-workflow-status: (string-ascii 20),
+        contract-execution-workflow-status: (string-ascii 35),
         comprehensive-service-specification-document: (string-ascii 256)
     }
 )
@@ -77,7 +77,7 @@
     {
         dispute-filing-party-wallet-address: principal,
         detailed-dispute-circumstances-description: (string-ascii 256),
-        dispute-arbitration-workflow-status: (string-ascii 20),
+        dispute-arbitration-workflow-status: (string-ascii 35),
         administrative-resolution-decision-documentation: (optional (string-ascii 256)),
         dispute-submission-blockchain-timestamp: uint,
         estimated-dispute-resolution-timeline: uint
@@ -254,7 +254,7 @@
 (define-public (execute-administrative-dispute-resolution
     (disputed-contract-identifier uint)
     (comprehensive-resolution-decision-documentation (string-ascii 256))
-    (final-contract-status-determination (string-ascii 20)))
+    (final-contract-status-determination (string-ascii 35)))
     
     (let ((engagement-contract-information 
            (unwrap! (query-service-engagement-contract-details disputed-contract-identifier) 
@@ -423,18 +423,20 @@
 ;; Update freelancer successful project completion statistics
 (define-private (increment-freelancer-successful-completion-statistics 
     (freelancer-wallet-address principal))
-    (let ((freelancer-reputation-data 
-           (unwrap! (map-get? freelancer-reputation-analytics-dashboard 
-                            { freelancer-blockchain-wallet-identifier: freelancer-wallet-address }) 
-                    ERR-SERVICE-CONTRACT-RECORD-NOT-FOUND)))
-        (map-set freelancer-reputation-analytics-dashboard
-            { freelancer-blockchain-wallet-identifier: freelancer-wallet-address }
-            (merge freelancer-reputation-data {
-                successfully-delivered-projects-completion-count: 
-                (+ (get successfully-delivered-projects-completion-count freelancer-reputation-data) u1)
-            })
+    (match (map-get? freelancer-reputation-analytics-dashboard 
+                     { freelancer-blockchain-wallet-identifier: freelancer-wallet-address })
+        freelancer-reputation-data
+        (begin
+            (map-set freelancer-reputation-analytics-dashboard
+                { freelancer-blockchain-wallet-identifier: freelancer-wallet-address }
+                (merge freelancer-reputation-data {
+                    successfully-delivered-projects-completion-count: 
+                    (+ (get successfully-delivered-projects-completion-count freelancer-reputation-data) u1)
+                })
+            )
+            true
         )
-        true
+        false
     )
 )
 
@@ -451,7 +453,7 @@
 
 ;; Validate contract status transition business rules
 (define-private (validate-contract-status-transition-rules 
-    (proposed-status-value (string-ascii 20)))
+    (proposed-status-value (string-ascii 35)))
     (or (is-eq proposed-status-value "awaiting-freelancer-acceptance")
         (is-eq proposed-status-value "active-development-phase")
         (is-eq proposed-status-value "successfully-completed-approved")
